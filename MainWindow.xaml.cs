@@ -113,7 +113,7 @@ public partial class MainWindow : Window
         ElementAlignmentCombo.ItemsSource = new[] { "left", "center", "right" };
         ElementTypeCombo.ItemsSource = new[] { "rectangle", "image", "text", "indicator" };
         ElementImageFitCombo.ItemsSource = new[] { "contain", "stretch" };
-        ElementOverflowCombo.ItemsSource = new[] { "overflow", "fit" };
+        ElementOverflowCombo.ItemsSource = new[] { "overflow", "fit", "fitWidth" };
         ElementTextTransformCombo.ItemsSource = new[] {
             "none", "uppercase", "lowercase", "capitalize", "smallCaps" };
         ElementFillTypeCombo.ItemsSource = new[] { "solid", "linearGradient" };
@@ -262,7 +262,13 @@ public partial class MainWindow : Window
             _theme.OverlayZ = Path.GetFileName(path).Equals("violation.json",
                 StringComparison.OrdinalIgnoreCase) ? 30 :
                 Path.GetFileName(path).Equals("player_foul.json",
-                StringComparison.OrdinalIgnoreCase) ? 20 : 10;
+                StringComparison.OrdinalIgnoreCase) ? 20 :
+                Path.GetFileName(path).Equals("starting5.json",
+                StringComparison.OrdinalIgnoreCase) ||
+                Path.GetFileName(path).Equals("outro.json",
+                StringComparison.OrdinalIgnoreCase) ||
+                Path.GetFileName(path).Equals("lineups.json",
+                StringComparison.OrdinalIgnoreCase) ? 45 : 10;
         _theme.Animation ??= new();
         _theme.Animation.Enter ??= new();
         _theme.Animation.Exit ??= new();
@@ -281,6 +287,9 @@ public partial class MainWindow : Window
             StringComparison.OrdinalIgnoreCase) ? 3 :
             screen.Equals("playcall", StringComparison.OrdinalIgnoreCase) ? 4 :
             screen.Equals("intro", StringComparison.OrdinalIgnoreCase) ? 2 :
+            screen.Equals("starting5", StringComparison.OrdinalIgnoreCase) ? 5 :
+            screen.Equals("outro", StringComparison.OrdinalIgnoreCase) ? 6 :
+            screen.Equals("lineups", StringComparison.OrdinalIgnoreCase) ? 7 :
             screen.Equals("stats", StringComparison.OrdinalIgnoreCase) ? 1 : 0;
         SetSubtypeOptions(screen.Equals("stats", StringComparison.OrdinalIgnoreCase));
         _loadingControls = false;
@@ -296,7 +305,8 @@ public partial class MainWindow : Window
         string? selected = (ScreenCombo.SelectedItem as ComboBoxItem)?.Content
             ?.ToString();
         if (selected is not ("Scoreboard" or "Violation" or "Stats" or
-            "Playcall" or "Intro")) return;
+            "Playcall" or "Intro" or "Starting Lineup" or "Outro" or
+            "In-Game Lineups")) return;
         SetSubtypeOptions(selected == "Stats");
         string currentScreen = Path.GetFileName(_themeDirectory);
         string packageDirectory = currentScreen.Equals("scoreboard",
@@ -304,14 +314,22 @@ public partial class MainWindow : Window
             currentScreen.Equals("violation", StringComparison.OrdinalIgnoreCase) ||
             currentScreen.Equals("playcall", StringComparison.OrdinalIgnoreCase) ||
             currentScreen.Equals("intro", StringComparison.OrdinalIgnoreCase) ||
+            currentScreen.Equals("starting5", StringComparison.OrdinalIgnoreCase) ||
+            currentScreen.Equals("outro", StringComparison.OrdinalIgnoreCase) ||
+            currentScreen.Equals("lineups", StringComparison.OrdinalIgnoreCase) ||
             currentScreen.Equals("stats", StringComparison.OrdinalIgnoreCase)
             ? Directory.GetParent(_themeDirectory)?.FullName ?? _themeDirectory
             : _themeDirectory;
-        string directoryName = selected.ToLowerInvariant();
+        string directoryName = selected == "Starting Lineup" ? "starting5" :
+            selected == "In-Game Lineups" ? "lineups" :
+            selected.ToLowerInvariant();
         string fileName = selected == "Scoreboard" ? "scoreboard.json" :
             selected == "Violation" ? "violation.json" :
             selected == "Playcall" ? "playcall.json" : "player.json";
         if (selected == "Intro") fileName = "intro.json";
+        if (selected == "Starting Lineup") fileName = "starting5.json";
+        if (selected == "Outro") fileName = "outro.json";
+        if (selected == "In-Game Lineups") fileName = "lineups.json";
         if (selected == "Stats" && !File.Exists(Path.Combine(
                 packageDirectory, directoryName, fileName)))
             fileName = "player_foul.json";
@@ -406,6 +424,16 @@ public partial class MainWindow : Window
                 Path.GetFileName(_themeDirectory), "violation",
                 StringComparison.OrdinalIgnoreCase) || string.Equals(
                 Path.GetFileName(_themeDirectory), "stats",
+                StringComparison.OrdinalIgnoreCase) || string.Equals(
+                Path.GetFileName(_themeDirectory), "intro",
+                StringComparison.OrdinalIgnoreCase) || string.Equals(
+                Path.GetFileName(_themeDirectory), "starting5",
+                StringComparison.OrdinalIgnoreCase) || string.Equals(
+                Path.GetFileName(_themeDirectory), "outro",
+                StringComparison.OrdinalIgnoreCase) || string.Equals(
+                Path.GetFileName(_themeDirectory), "lineups",
+                StringComparison.OrdinalIgnoreCase) || string.Equals(
+                Path.GetFileName(_themeDirectory), "playcall",
                 StringComparison.OrdinalIgnoreCase)))
             path = Path.Combine(Directory.GetParent(_themeDirectory!)?.FullName
                 ?? _themeDirectory!, "scoreboard", "teams.json");
@@ -657,8 +685,8 @@ public partial class MainWindow : Window
         _theme.Elements.First(x => x.Id == "awayScore").Alignment = "right";
         _theme.Elements.First(x => x.Id == "homeScore").Alignment = "right";
         _theme.Elements.First(x => x.Id == "shotClock").Alignment = "right";
-        _theme.Elements.First(x => x.Id == "awayName").Overflow = "fit";
-        _theme.Elements.First(x => x.Id == "homeName").Overflow = "fit";
+        _theme.Elements.First(x => x.Id == "awayName").Overflow = "fitWidth";
+        _theme.Elements.First(x => x.Id == "homeName").Overflow = "fitWidth";
     }
 
     private void RefreshLayerLists()
@@ -1095,6 +1123,18 @@ public partial class MainWindow : Window
                     "stat.teamColor" => away.PrimaryColor,
                     "stat.primaryColor" => away.PrimaryColor,
                     "stat.secondaryColor" => away.SecondaryColor,
+                    "starting5.teamColor" or "starting5.primaryColor" =>
+                        Starting5Team(away, home).PrimaryColor,
+                    "starting5.secondaryColor" =>
+                        Starting5Team(away, home).SecondaryColor,
+                    "outro.awayPrimaryColor" => away.PrimaryColor,
+                    "outro.awaySecondaryColor" => away.SecondaryColor,
+                    "outro.homePrimaryColor" => home.PrimaryColor,
+                    "outro.homeSecondaryColor" => home.SecondaryColor,
+                    "lineups.awayPrimaryColor" => away.PrimaryColor,
+                    "lineups.awaySecondaryColor" => away.SecondaryColor,
+                    "lineups.homePrimaryColor" => home.PrimaryColor,
+                    "lineups.homeSecondaryColor" => home.SecondaryColor,
                     _ => fallback
                 };
                 int start = Resolve(layer.Fill.StartBinding, layer.Fill.StartColor);
@@ -1156,15 +1196,29 @@ public partial class MainWindow : Window
             "home.logo" => home.Logo,
             "intro.awayLogo" => away.Logo,
             "intro.homeLogo" => home.Logo,
+            "starting5.teamLogo" => Starting5Team(away, home).Logo,
+            "starting5.player1Portrait" => Path.Combine("portraits",
+                Starting5PreviewValue(0) + ".png"),
+            "starting5.player2Portrait" => Path.Combine("portraits",
+                Starting5PreviewValue(1) + ".png"),
+            "starting5.player3Portrait" => Path.Combine("portraits",
+                Starting5PreviewValue(2) + ".png"),
+            "starting5.player4Portrait" => Path.Combine("portraits",
+                Starting5PreviewValue(3) + ".png"),
+            "starting5.player5Portrait" => Path.Combine("portraits",
+                Starting5PreviewValue(4) + ".png"),
+            "outro.awayLogo" => away.Logo,
+            "outro.homeLogo" => home.Logo,
+            "lineups.awayLogo" => away.Logo,
+            "lineups.homeLogo" => home.Logo,
             "violation.teamLogo" => Path.Combine("teams",
                 ViolationTeam(away, home).ShortCode + ".png"),
             "stat.teamLogo" => Path.Combine("teams", away.ShortCode + ".png"),
             "player.portrait" => Path.Combine("portraits", "LAODOM_.png"),
             _ => layer.Image
         };
-        return string.IsNullOrWhiteSpace(relative) ? null : Path.GetFullPath(
-            Path.Combine(directory,
-                relative.Replace('/', Path.DirectorySeparatorChar)));
+        return string.IsNullOrWhiteSpace(relative) ? null :
+            ResolveThemeAssetPath(directory, relative);
     }
 
     private int ResolvePreviewColor(string binding, int fallback,
@@ -1179,6 +1233,17 @@ public partial class MainWindow : Window
         "stat.teamColor" => away.PrimaryColor,
         "stat.primaryColor" => away.PrimaryColor,
         "stat.secondaryColor" => away.SecondaryColor,
+        "starting5.teamColor" or "starting5.primaryColor" =>
+            Starting5Team(away, home).PrimaryColor,
+        "starting5.secondaryColor" => Starting5Team(away, home).SecondaryColor,
+        "outro.awayPrimaryColor" => away.PrimaryColor,
+        "outro.awaySecondaryColor" => away.SecondaryColor,
+        "outro.homePrimaryColor" => home.PrimaryColor,
+        "outro.homeSecondaryColor" => home.SecondaryColor,
+        "lineups.awayPrimaryColor" => away.PrimaryColor,
+        "lineups.awaySecondaryColor" => away.SecondaryColor,
+        "lineups.homePrimaryColor" => home.PrimaryColor,
+        "lineups.homeSecondaryColor" => home.SecondaryColor,
         _ => fallback
     };
 
@@ -1217,6 +1282,18 @@ public partial class MainWindow : Window
                     "stat.teamColor" => away.PrimaryColor,
                     "stat.primaryColor" => away.PrimaryColor,
                     "stat.secondaryColor" => away.SecondaryColor,
+                    "starting5.teamColor" or "starting5.primaryColor" =>
+                        Starting5Team(away, home).PrimaryColor,
+                    "starting5.secondaryColor" =>
+                        Starting5Team(away, home).SecondaryColor,
+                    "outro.awayPrimaryColor" => away.PrimaryColor,
+                    "outro.awaySecondaryColor" => away.SecondaryColor,
+                    "outro.homePrimaryColor" => home.PrimaryColor,
+                    "outro.homeSecondaryColor" => home.SecondaryColor,
+                    "lineups.awayPrimaryColor" => away.PrimaryColor,
+                    "lineups.awaySecondaryColor" => away.SecondaryColor,
+                    "lineups.homePrimaryColor" => home.PrimaryColor,
+                    "lineups.homeSecondaryColor" => home.SecondaryColor,
                     _ => fallback
                 };
                 int start = Resolve(layer.Fill.StartBinding, layer.Fill.StartColor);
@@ -1235,6 +1312,17 @@ public partial class MainWindow : Window
                     "home.logo" => TeamLogoPath(home),
                     "intro.awayLogo" => TeamLogoPath(away),
                     "intro.homeLogo" => TeamLogoPath(home),
+                    "starting5.teamLogo" => TeamLogoPath(
+                        Starting5Team(away, home)),
+                    "starting5.player1Portrait" => Starting5PortraitPath(0),
+                    "starting5.player2Portrait" => Starting5PortraitPath(1),
+                    "starting5.player3Portrait" => Starting5PortraitPath(2),
+                    "starting5.player4Portrait" => Starting5PortraitPath(3),
+                    "starting5.player5Portrait" => Starting5PortraitPath(4),
+                    "outro.awayLogo" => TeamLogoPath(away),
+                    "outro.homeLogo" => TeamLogoPath(home),
+                    "lineups.awayLogo" => TeamLogoPath(away),
+                    "lineups.homeLogo" => TeamLogoPath(home),
                     "violation.teamLogo" => ViolationLogoPath(away, home),
                     "stat.teamLogo" => StatsTeamLogoPath(away),
                     "player.portrait" => StatsPortraitPath(),
@@ -1263,9 +1351,23 @@ public partial class MainWindow : Window
         }
     }
 
+    private static string ResolveThemeAssetPath(string directory,
+        string relative)
+    {
+        string normalized = relative.Replace('/', Path.DirectorySeparatorChar);
+        string direct = Path.GetFullPath(Path.Combine(directory, normalized));
+        if (File.Exists(direct) || Path.GetFileName(directory).Equals(
+                "scoreboard", StringComparison.OrdinalIgnoreCase))
+            return direct;
+        string packageDirectory = Directory.GetParent(directory)?.FullName ??
+            directory;
+        return Path.GetFullPath(Path.Combine(packageDirectory, "scoreboard",
+            normalized));
+    }
+
     private string? TeamLogoPath(TeamDefinition team) =>
         _themeDirectory is null || string.IsNullOrWhiteSpace(team.Logo) ? null :
-        Path.Combine(_themeDirectory, team.Logo.Replace('/', Path.DirectorySeparatorChar));
+        ResolveThemeAssetPath(_themeDirectory, team.Logo);
 
     private string StatPreviewValue(int index)
     {
@@ -1278,6 +1380,39 @@ public partial class MainWindow : Window
         string[] values = IntroValuesBox.Text.Split('|');
         return index >= 0 && index < values.Length ? values[index] : "";
     }
+
+    private string Starting5PreviewValue(int index)
+    {
+        string[] values = Starting5ValuesBox.Text.Split('|');
+        return index >= 0 && index < values.Length ? values[index] : "";
+    }
+
+    private string OutroPreviewValue(int index)
+    {
+        string[] values = OutroValuesBox.Text.Split('|');
+        return index >= 0 && index < values.Length ? values[index] : "";
+    }
+
+    private string LineupsPreviewValue(int index)
+    {
+        string[] values = LineupsValuesBox.Text.Split('|');
+        return index >= 0 && index < values.Length ? values[index] : "";
+    }
+
+    private TeamDefinition Starting5Team(TeamDefinition away,
+        TeamDefinition home)
+    {
+        string code = Starting5PreviewValue(10);
+        return _teams.FirstOrDefault(team => team.ShortCode.Equals(code,
+            StringComparison.OrdinalIgnoreCase)) ??
+            (home.ShortCode.Equals(code, StringComparison.OrdinalIgnoreCase) ?
+                home : away);
+    }
+
+    private string? Starting5PortraitPath(int index) =>
+        _themeDirectory is null || Starting5PreviewValue(index).Length == 0 ?
+            null : Path.Combine(_themeDirectory, "portraits",
+                Starting5PreviewValue(index) + ".png");
 
     private string ResolvePreviewBinding(string binding, TeamDefinition away,
         TeamDefinition home, string fallback)
@@ -1310,6 +1445,27 @@ public partial class MainWindow : Window
             int.TryParse(binding[introRawPrefix.Length..], out int introRawIndex) &&
             introRawIndex >= 0 && introRawIndex < 15)
             return IntroPreviewValue(introRawIndex);
+        const string starting5RawPrefix = "starting5.raw";
+        if (binding.StartsWith(starting5RawPrefix,
+                StringComparison.OrdinalIgnoreCase) &&
+            int.TryParse(binding[starting5RawPrefix.Length..],
+                out int starting5RawIndex) &&
+            starting5RawIndex >= 0 && starting5RawIndex < 11)
+            return Starting5PreviewValue(starting5RawIndex);
+        const string outroRawPrefix = "outro.raw";
+        if (binding.StartsWith(outroRawPrefix,
+                StringComparison.OrdinalIgnoreCase) &&
+            int.TryParse(binding[outroRawPrefix.Length..],
+                out int outroRawIndex) &&
+            outroRawIndex >= 0 && outroRawIndex < 15)
+            return OutroPreviewValue(outroRawIndex);
+        const string lineupsRawPrefix = "lineups.raw";
+        if (binding.StartsWith(lineupsRawPrefix,
+                StringComparison.OrdinalIgnoreCase) &&
+            int.TryParse(binding[lineupsRawPrefix.Length..],
+                out int lineupsRawIndex) &&
+            lineupsRawIndex >= 0 && lineupsRawIndex < 14)
+            return LineupsPreviewValue(lineupsRawIndex);
         return binding switch
         {
         "away.score" => AwayScoreBox.Text, "home.score" => HomeScoreBox.Text,
@@ -1340,9 +1496,53 @@ public partial class MainWindow : Window
         "intro.awayTeamCode" => IntroPreviewValue(12),
         "intro.homeTeamCode" => IntroPreviewValue(13),
         "intro.leagueCode" => IntroPreviewValue(14),
+        "starting5.player1Id" => Starting5PreviewValue(0),
+        "starting5.player2Id" => Starting5PreviewValue(1),
+        "starting5.player3Id" => Starting5PreviewValue(2),
+        "starting5.player4Id" => Starting5PreviewValue(3),
+        "starting5.player5Id" => Starting5PreviewValue(4),
+        "starting5.player1Name" => Starting5PreviewValue(5),
+        "starting5.player2Name" => Starting5PreviewValue(6),
+        "starting5.player3Name" => Starting5PreviewValue(7),
+        "starting5.player4Name" => Starting5PreviewValue(8),
+        "starting5.player5Name" => Starting5PreviewValue(9),
+        "starting5.teamCode" => Starting5PreviewValue(10),
+        "starting5.teamName" => Starting5Team(away, home).TeamName,
+        "starting5.side" => Starting5PreviewValue(10).Equals(home.ShortCode,
+            StringComparison.OrdinalIgnoreCase) ? "home" : "away",
+        "outro.homeHeading" => OutroPreviewValue(0),
+        "outro.awayCity" => OutroPreviewValue(1),
+        "outro.awayNickname" => OutroPreviewValue(2),
+        "outro.awayRecord" => OutroPreviewValue(3),
+        "outro.homeCity" => OutroPreviewValue(4),
+        "outro.homeNickname" => OutroPreviewValue(5),
+        "outro.homeRecord" => OutroPreviewValue(6),
+        "outro.extra" => OutroPreviewValue(7),
+        "outro.arena" => OutroPreviewValue(8),
+        "outro.location" => OutroPreviewValue(9),
+        "outro.awayScore" => OutroPreviewValue(10),
+        "outro.homeScore" => OutroPreviewValue(11),
+        "outro.awayTeamCode" => OutroPreviewValue(12),
+        "outro.homeTeamCode" => OutroPreviewValue(13),
+        "outro.leagueCode" => OutroPreviewValue(14),
+        "lineups.awayPlayer1" => LineupsPreviewValue(0),
+        "lineups.awayPlayer2" => LineupsPreviewValue(1),
+        "lineups.awayPlayer3" => LineupsPreviewValue(2),
+        "lineups.awayPlayer4" => LineupsPreviewValue(3),
+        "lineups.awayPlayer5" => LineupsPreviewValue(4),
+        "lineups.homePlayer1" => LineupsPreviewValue(5),
+        "lineups.homePlayer2" => LineupsPreviewValue(6),
+        "lineups.homePlayer3" => LineupsPreviewValue(7),
+        "lineups.homePlayer4" => LineupsPreviewValue(8),
+        "lineups.homePlayer5" => LineupsPreviewValue(9),
+        "lineups.awayTeamCode" => LineupsPreviewValue(10),
+        "lineups.awayTeamName" => LineupsPreviewValue(11),
+        "lineups.homeTeamCode" => LineupsPreviewValue(12),
+        "lineups.homeTeamName" => LineupsPreviewValue(13),
         "player.firstName" => StatPreviewValue(0),
         "player.lastName" => StatPreviewValue(1),
         "player.fullName" => $"{StatPreviewValue(0)} {StatPreviewValue(1)}".Trim(),
+        "player.jerseyNumber" => PlayerJerseyNumberBox.Text,
         "stat.label1" => "Personal Fouls",
         "stat.value1" => "1",
         "stat.label2" => "Team",
@@ -1406,6 +1606,7 @@ public partial class MainWindow : Window
         "violation.possession" or "violation.teamName" => _font.TeamNameHeight,
         "playcall.team" or "playcall.call" => _font.TeamNameHeight,
         "player.firstName" or "player.lastName" or "player.fullName" or
+        "player.jerseyNumber" or
         "stat.label1" or "stat.value1" or "stat.label2" or
         "stat.value2" or "stat.teamName" => _font.TeamNameHeight,
         _ => _font.TeamNameHeight
@@ -1528,18 +1729,20 @@ public partial class MainWindow : Window
 
         if (layer is not null)
         {
-            preview.TextAlignment = layer.Alignment switch
+            TextAlignment alignment = layer.Alignment switch
             {
                 "left" => TextAlignment.Left,
                 "right" => TextAlignment.Right,
                 _ => TextAlignment.Center
             };
-            preview.Width = Math.Max(1, layer.Width);
-            preview.HorizontalAlignment = HorizontalAlignment.Stretch;
+            preview.TextAlignment = alignment;
+            bool widthFit = IsWidthFit(layer.Overflow);
+            preview.Width = widthFit ? double.NaN : Math.Max(1, layer.Width);
+            preview.HorizontalAlignment = widthFit
+                ? AlignmentToHorizontal(layer.Alignment)
+                : HorizontalAlignment.Stretch;
 
-            border.Child = layer.Overflow == "fit"
-                ? new Viewbox { Stretch = Stretch.Uniform, Child = preview }
-                : preview;
+            border.Child = ApplyTextOverflow(preview, layer);
         }
         else
         {
@@ -1726,7 +1929,10 @@ public partial class MainWindow : Window
     {
         PopupFontTheme font = popupFont ?? _font;
         string? directory = themeDirectory ?? _themeDirectory;
-        Grid effects = new() { Width = Math.Max(1, layer.Width) };
+        bool widthFit = IsWidthFit(layer.Overflow);
+        Grid effects = widthFit
+            ? new Grid()
+            : new Grid { Width = Math.Max(1, layer.Width) };
         TextAlignment alignment = layer.Alignment switch
         {
             "left" => TextAlignment.Left,
@@ -1741,8 +1947,10 @@ public partial class MainWindow : Window
             ApplyTextTransform(pass, value, layer.TextTransform,
                 layer.SmallCapsScale);
             pass.TextAlignment = alignment;
-            pass.Width = Math.Max(1, layer.Width);
-            pass.HorizontalAlignment = HorizontalAlignment.Stretch;
+            pass.Width = widthFit ? double.NaN : Math.Max(1, layer.Width);
+            pass.HorizontalAlignment = widthFit
+                ? AlignmentToHorizontal(layer.Alignment)
+                : HorizontalAlignment.Stretch;
             pass.RenderTransform = new TranslateTransform(x, y);
             effects.Children.Add(pass);
         }
@@ -1765,9 +1973,59 @@ public partial class MainWindow : Window
         }
         AddPass(layer.TextColor, 0, 0);
 
-        return layer.Overflow == "fit"
-            ? new Viewbox { Stretch = Stretch.Uniform, Child = effects }
-            : effects;
+        return ApplyTextOverflow(effects, layer);
+    }
+
+    private static bool IsUniformFit(string? overflow) =>
+        string.Equals(overflow, "fit", StringComparison.OrdinalIgnoreCase);
+
+    private static bool IsWidthFit(string? overflow) =>
+        string.Equals(overflow, "fitWidth", StringComparison.OrdinalIgnoreCase);
+
+    private static HorizontalAlignment AlignmentToHorizontal(string? alignment) =>
+        alignment switch
+        {
+            "left" => HorizontalAlignment.Left,
+            "right" => HorizontalAlignment.Right,
+            _ => HorizontalAlignment.Center
+        };
+
+    private FrameworkElement ApplyTextOverflow(FrameworkElement content,
+        OverlayElement layer)
+    {
+        if (IsUniformFit(layer.Overflow))
+            return new Viewbox { Stretch = Stretch.Uniform, Child = content };
+
+        if (!IsWidthFit(layer.Overflow))
+            return content;
+
+        try
+        {
+            content.Measure(new System.Windows.Size(
+				double.PositiveInfinity,
+				double.PositiveInfinity));
+            double naturalWidth = content.DesiredSize.Width;
+            if (naturalWidth > 0)
+            {
+                double availableWidth = Math.Max(1, layer.Width);
+                double scaleX = Math.Min(1.0,
+                    Math.Max(0.05, availableWidth / naturalWidth));
+                content.LayoutTransform = new ScaleTransform(scaleX, 1.0);
+            }
+        }
+        catch { }
+
+        content.HorizontalAlignment = AlignmentToHorizontal(layer.Alignment);
+        content.VerticalAlignment = VerticalAlignment.Center;
+
+        Grid host = new()
+        {
+            Width = Math.Max(1, layer.Width),
+            Height = Math.Max(1, layer.Height),
+            ClipToBounds = true
+        };
+        host.Children.Add(content);
+        return host;
     }
 
     private static string TransformText(string value, string transform)
@@ -2148,6 +2406,29 @@ public partial class MainWindow : Window
     private void AddRectangleLayer_Click(object sender, RoutedEventArgs e) => AddLayer("rectangle");
     private void AddImageLayer_Click(object sender, RoutedEventArgs e) => AddLayer("image");
     private void AddTextLayer_Click(object sender, RoutedEventArgs e) => AddLayer("text");
+
+    private void AddJerseyNumberLayer_Click(object sender, RoutedEventArgs e)
+    {
+        string id = UniqueLayerId("playerJerseyNumber");
+        OverlayElement layer = new()
+        {
+            Id = id,
+            Type = "text",
+            Binding = "player.jerseyNumber",
+            X = 20,
+            Y = 20,
+            Width = 70,
+            Height = 32,
+            Z = _theme.Elements.Count == 0 ? 0 : _theme.Elements.Max(x => x.Z) + 1,
+            Alignment = "center",
+            Overflow = "fit",
+            FontHeight = 30
+        };
+        _theme.Elements.Add(layer);
+        _selectedPrefix = id;
+        RefreshLayerLists();
+        RebuildPreview();
+    }
 
     private void DuplicateLayer_Click(object sender, RoutedEventArgs e)
     {

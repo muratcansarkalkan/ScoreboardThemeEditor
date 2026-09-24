@@ -20,13 +20,16 @@
                 <Button Content="Save As..." Click="SaveAs_Click" Padding="14,5" Margin="0,0,8,0"/>
                 <Button Content="Save + Reload in Game" Click="SaveReload_Click" Padding="14,5" Margin="0,0,18,0"/>
                 <TextBlock Text="Screen" VerticalAlignment="Center" Margin="0,0,5,0"/>
-                <ComboBox x:Name="ScreenCombo" Width="105" SelectedIndex="0" Margin="0,0,8,0"
+                <ComboBox x:Name="ScreenCombo" Width="145" SelectedIndex="0" Margin="0,0,8,0"
                           SelectionChanged="ScreenCombo_SelectionChanged">
                     <ComboBoxItem Content="Scoreboard" IsEnabled="True"/>
                     <ComboBoxItem Content="Stats" IsEnabled="True"/>
                     <ComboBoxItem Content="Intro" IsEnabled="True"/>
                     <ComboBoxItem Content="Violation" IsEnabled="True"/>
                     <ComboBoxItem Content="Playcall" IsEnabled="True"/>
+                    <ComboBoxItem Content="Starting Lineup" IsEnabled="True"/>
+                    <ComboBoxItem Content="Outro" IsEnabled="True"/>
+                    <ComboBoxItem Content="In-Game Lineups" IsEnabled="True"/>
                 </ComboBox>
                 <TextBlock Text="Subtype" VerticalAlignment="Center" Margin="0,0,5,0"/>
                 <ComboBox x:Name="SubtypeCombo" Width="110" SelectedIndex="0" Margin="0,0,18,0"
@@ -45,7 +48,7 @@
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="390"/></Grid.ColumnDefinitions>
             <Grid Grid.Column="0" Margin="14">
-                <Grid.RowDefinitions><RowDefinition Height="*"/><RowDefinition Height="150"/></Grid.RowDefinitions>
+                <Grid.RowDefinitions><RowDefinition Height="*"/><RowDefinition Height="220"/></Grid.RowDefinitions>
                 <Border Background="#0D0F13" BorderBrush="#343946" BorderThickness="1" Padding="12">
                     <Viewbox Stretch="Uniform">
                         <Canvas x:Name="PreviewStage" Width="1366" Height="768" Background="#090B10">
@@ -80,10 +83,25 @@
                         <TextBlock Text="Stat values 0–14 (use |)" Margin="6" VerticalAlignment="Center"/>
                         <TextBox x:Name="StatValuesBox" Text="Lamar|Odom|Personal Fouls|1|Team|1|||||||4925563|ll|LAODOM_"
                                  Width="520" Margin="3" TextChanged="PreviewTextChanged"/>
+                        <TextBlock Text="Jersey #" Margin="6" VerticalAlignment="Center"/>
+                        <TextBox x:Name="PlayerJerseyNumberBox" Text="7" Width="48" Margin="3" TextChanged="PreviewTextChanged"
+                                 ToolTip="Preview value for player.jerseyNumber in player stat/foul popups"/>
                         <TextBlock Text="Intro values 0–14 (use |)" Margin="6" VerticalAlignment="Center"/>
                         <TextBox x:Name="IntroValuesBox"
                                  Text="76ers Basketball|Chicago|Bulls|49 - 33|Philadelphia|76ers|35 - 47|Live from|Wachovia Center|Philadelphia, PA|12489020|23727|ci|pd|le"
                                  Width="720" Margin="3" TextChanged="PreviewTextChanged"/>
+                        <TextBlock Text="Starting5 values 0–10 (use |)" Margin="6" VerticalAlignment="Center"/>
+                        <TextBox x:Name="Starting5ValuesBox"
+                                 Text="ALIVERS|KYKORVE|ANIGUOD|CHWEBBE|SADALEM|A. Iverson|K. Korver|A. Iguodala|C. Webber|S. Dalembert|pd"
+                                 Width="720" Margin="3" TextChanged="PreviewTextChanged"/>
+                        <TextBlock Text="Outro values 0–14 (use |)" Margin="6" VerticalAlignment="Center"/>
+                        <TextBox x:Name="OutroValuesBox"
+                                 Text="76ers Basketball|New York|Knicks|33 - 49|Philadelphia|76ers|43 - 39||Wachovia Center|Philadelphia, PA|26|35|ny|pd|le"
+                                 Width="720" Margin="3" TextChanged="PreviewTextChanged"/>
+                        <TextBlock Text="In-game lineup values 0–13 (use |)" Margin="6" VerticalAlignment="Center"/>
+                        <TextBox x:Name="LineupsValuesBox"
+                                 Text="S. Cassell|C. Mobley|T. Thomas|E. Brand|C. Kaman|R. Alston|T. McGrady|S. Battier|J. Butler|Y. Ming|lc|Clippers|ho|Rockets"
+                                 Width="900" Margin="3" TextChanged="PreviewTextChanged"/>
                     </WrapPanel>
                 </GroupBox>
             </Grid>
@@ -197,10 +215,12 @@
                                 <Button Content="Delete" Click="DeleteLayer_Click" Margin="2"/>
                             </UniformGrid>
                             <TextBlock Text="Add layer" Margin="0,8,0,2"/>
-                            <UniformGrid Columns="3">
+                            <UniformGrid Columns="4">
                                 <Button Content="Rectangle" Click="AddRectangleLayer_Click" Margin="2"/>
                                 <Button Content="Image" Click="AddImageLayer_Click" Margin="2"/>
                                 <Button Content="Text" Click="AddTextLayer_Click" Margin="2"/>
+                                <Button Content="Jersey #" Click="AddJerseyNumberLayer_Click" Margin="2"
+                                        ToolTip="Add a text layer bound to player.jerseyNumber"/>
                             </UniformGrid>
                         </StackPanel>
                         <ListBox x:Name="LayersList" DisplayMemberPath="DisplayName"

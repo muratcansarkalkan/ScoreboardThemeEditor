@@ -2,6 +2,8 @@
 
 NBA Live Scoreboard Theme Editor is a visual editor for custom scoreboard themes used by the NBA Live ASI plugin.
 
+For a complete first-time-user walkthrough covering the scoreboard, stat/player-foul popups, violations, play calls, intro, starting lineups, outro, in-game lineups, bindings, assets, fonts, and live reload, see **[USER_GUIDE.md](USER_GUIDE.md)**.
+
 Open a theme such as:
 
 ```text
@@ -19,7 +21,7 @@ The editor supports:
 - Rectangle, image, text, and indicator elements
 - Fixed colors and team-color bindings
 - Solid fills and two-color horizontal or vertical gradients
-- Text alignment, capitalization, small caps, overflow, and fit modes
+- Text alignment, capitalization, small caps, overflow, fit, and fitWidth (horizontal condense) modes
 - Text templates containing multiple live values
 - Text stroke and shadow effects
 - Color pickers for text, tint, fills, gradients, scoreboard backgrounds, and shot-clock colors
@@ -61,7 +63,7 @@ The **Element** tab controls:
 - Opacity and visibility
 - Locking
 - Horizontal and vertical alignment
-- `overflow` and `fit` behavior
+- `overflow`, `fit`, and `fitWidth` behavior
 - Solid fills
 - Horizontal and vertical gradients
 - Image tinting
@@ -202,4 +204,15 @@ The editor updates the theme's `.reload` marker. The plugin checks this marker e
 
 `F5` remains available as a manual reload method.
 
-The current editor focuses on the main scoreboard. The same canvas and property model can be extended to edit `stat.json`, `violation.json`, `playcall.json`, `intro.json`, and starting-lineup layouts in future releases.
+The current editor can switch among the main scoreboard, Stats, Intro, Violation, Playcall, Starting Lineup, Outro, and In-Game Lineups when the corresponding layout files exist in the popup package.
+### Player jersey numbers in stat / foul popups
+
+Player stat layouts can display the featured player's jersey number with a normal text element using `player.jerseyNumber`. The editor includes a **Jersey #** layer button that creates this binding automatically, plus a **Jersey #** preview value in Preview Data. Example:
+
+```json
+{
+  "id": "playerJerseyNumber",
+  "type": "text",
+  "binding": "player.jerseyNumber"
+}
+```
