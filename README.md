@@ -1,27 +1,144 @@
 # NBA Live Scoreboard Theme Editor
 
-Open `popups\TEST\scoreboard.json`, select preview teams, and drag the known
-scoreboard elements directly on the canvas. Exact bounds, behavior rules, font
-settings, simulated game data, and asset-backed team previews are supported.
+NBA Live Scoreboard Theme Editor is a visual editor for custom scoreboard themes used by the NBA Live ASI plugin.
 
-The Font tab independently controls score, game clock, shot clock, team name,
-period, numeric/text foul, numeric/text timeout, and BONUS heights. Dot, bar,
-and image indicator sizes use their draggable element bounds instead.
+For a complete first-time-user walkthrough covering the scoreboard, stat/player-foul popups, violations, play calls, intro, starting lineups, outro, in-game lineups, bindings, assets, fonts, and live reload, see **[USER_GUIDE.md](USER_GUIDE.md)**.
 
-The Preview selector shows the scoreboard over a bundled generic broadcast
-background at 4:3, 16:9, or 16:10. The stage uses the same centered placement,
-reference resolution, offsets, and uniform/fixed scale rules as the game.
+Open a theme such as:
 
-The editor automatically migrates legacy named scoreboard properties into an
-ordered `elements[]` collection. The Layers tab can add rectangles, images,
-and text; duplicate/delete layers; and change their Z-order. Hidden and locked
-layers remain selectable from the list.
+```text
+assets\popups\TEST\scoreboard\scoreboard.json
+```
 
-The Element tab controls bounds, opacity, visibility, locking, alignment,
-`overflow` versus `fit`, solid fills, and two-color horizontal/vertical
-gradients. Primary and secondary team-color panels are ordinary layers.
+Select preview teams and drag scoreboard elements directly on the canvas. The editor supports exact bounds, behavior rules, font settings, simulated game data, and asset-backed team previews.
 
-Useful bindings include:
+## Features
+
+The editor supports:
+
+- Draggable scoreboard elements with precise position and size controls
+- Ordered layers with duplication, deletion, locking, visibility, and Z-order controls
+- Rectangle, image, text, and indicator elements
+- Fixed colors and team-color bindings
+- Solid fills and two-color horizontal or vertical gradients
+- Text alignment, capitalization, small caps, overflow, fit, and fitWidth (horizontal condense) modes
+- Text templates containing multiple live values
+- Text stroke and shadow effects
+- Color pickers for text, tint, fills, gradients, scoreboard backgrounds, and shot-clock colors
+- Preview backgrounds for 4:3, 16:9, and 16:10 displays
+
+The preview uses the same centered placement, reference resolution, offsets, and uniform or fixed scaling rules as the in-game renderer.
+
+## Theme structure
+
+Custom themes are stored under:
+
+```text
+assets\popups\<theme-name>\
+```
+
+The main scoreboard layout is stored at:
+
+```text
+assets\popups\<theme-name>\scoreboard\scoreboard.json
+```
+
+Images, fonts, team logos, and other theme assets should remain inside the corresponding theme directory.
+
+The editor automatically migrates legacy named scoreboard properties into an ordered `elements[]` collection.
+
+## Layers
+
+The **Layers** tab can:
+
+- Add rectangles, images, text, and indicators
+- Duplicate or delete layers
+- Change layer order
+- Hide or lock layers
+- Select hidden or locked layers from the layer list
+
+The **Element** tab controls:
+
+- Position and dimensions
+- Opacity and visibility
+- Locking
+- Horizontal and vertical alignment
+- `overflow`, `fit`, and `fitWidth` behavior
+- Solid fills
+- Horizontal and vertical gradients
+- Image tinting
+- Text stroke and shadow settings
+
+Primary and secondary team-color panels are ordinary layers and can be edited like any other element.
+
+## Fonts and text
+
+The **Font** tab independently controls the appearance of:
+
+- Team scores
+- Game clock
+- Shot clock
+- Team names
+- Period
+- Numeric and text fouls
+- Numeric and text timeouts
+- BONUS indicators
+
+Dot, bar, and image indicator sizes are controlled through their draggable element bounds.
+
+### Text templates
+
+A text element can combine static text with multiple live values:
+
+```json
+"template": "{away.name} {away.score} - {home.score} {home.name}"
+```
+
+Another example:
+
+```json
+"template": "TIMEOUTS: {home.timeouts}"
+```
+
+Use doubled braces to display literal braces:
+
+```json
+"template": "{{LIVE}} {game.clock}"
+```
+
+### Stroke and shadow
+
+Text elements support an optional stroke and hard-edged shadow:
+
+```json
+{
+  "type": "text",
+  "template": "TIMEOUTS: {home.timeouts}",
+  "textColor": 16777215,
+  "stroke": {
+    "enabled": true,
+    "color": 0,
+    "width": 2
+  },
+  "shadow": {
+    "enabled": true,
+    "color": 0,
+    "alpha": 180,
+    "offsetX": 2,
+    "offsetY": 2
+  }
+}
+```
+
+Text is rendered in this order:
+
+1. Shadow
+2. Stroke
+3. Main text
+
+## Available bindings
+
+Useful scoreboard bindings include:
 
 ```text
 away.primaryColor       home.primaryColor
@@ -36,29 +153,176 @@ game.clock               game.shotClock
 game.period
 ```
 
-Use `type: "indicator"` for foul or timeout bindings. Gradient endpoints can
-each use a fixed decimal RGB color or one of the four team-color bindings.
+Use `type: "indicator"` for foul or timeout bindings.
 
-## Build
+Gradient endpoints can use either a fixed decimal RGB color or one of the four team-color bindings.
 
-Open `ScoreboardThemeEditor.csproj` in Visual Studio 2022 with the .NET 8 SDK,
-or run:
+## End-user installation
+
+Keep these four files together in the same directory:
+
+```text
+NBALiveScoreboardEditor.exe
+NBALiveScoreboardEditor.dll
+NBALiveScoreboardEditor.deps.json
+NBALiveScoreboardEditor.runtimeconfig.json
+```
+
+`NBALiveScoreboardEditor.pdb` contains debugging symbols and is not required by end users.
+
+### Requirements
+
+The framework-dependent release requires:
+
+- Windows
+- Microsoft .NET 8 Desktop Runtime
+- The release files listed above
+
+The ordinary .NET Runtime is not sufficient because the editor uses WPF. Install the **.NET 8 Desktop Runtime** matching the application architecture.
+
+The .NET SDK and Visual Studio are only required when building the editor from source.
+
+## Build from source
+
+Open `ScoreboardThemeEditor.csproj` in Visual Studio 2022 with the .NET 8 SDK installed, or run:
 
 ```powershell
 dotnet build -c Release
 ```
 
+The compiled files will be placed under the project's `bin\Release` directory.
+
 ## Live workflow
 
 1. Run NBA Live with the updated ASI plugin.
 2. Pause the game.
-3. Edit the theme.
+3. Open and edit the active theme.
 4. Click **Save + Reload in Game**.
-5. Resume.
+5. Resume the game.
 
-The editor updates `.reload`; the plugin checks it every 500 ms from the D3D9
-render thread. `F5` remains available as a manual reload method.
+The editor updates the theme's `.reload` marker. The plugin checks this marker every 500 milliseconds from the Direct3D 9 render thread.
 
-The first release edits the main scoreboard. The same canvas/property model is
-intended to add `stat.json`, `violation.json`, `playcall.json`, `intro.json`,
-and lineup layouts next.
+`F5` remains available as a manual reload method.
+
+The current editor can switch among the main scoreboard, Stats, Intro, Violation, Playcall, Starting Lineup, Outro, and In-Game Lineups when the corresponding layout files exist in the popup package.
+### Player jersey numbers in stat / foul popups
+
+Player stat layouts can display the featured player's jersey number with a normal text element using `player.jerseyNumber`. The editor includes a **Jersey #** layer button that creates this binding automatically, plus a **Jersey #** preview value in Preview Data. Example:
+
+```json
+{
+  "id": "playerJerseyNumber",
+  "type": "text",
+  "binding": "player.jerseyNumber"
+}
+```
+
+### Optional school stat layout
+
+`stats\player_school.json` may be supplied as a school-specific override (for example `Tayshaun|Prince|School|Kentucky|...`). It can be a copy of `player_1.json`. If it is absent, the runtime falls back to the normal one-value player layout.
+
+## Team Leaders player/team bindings
+
+`team_leaders.json` supports player-specific Team Leaders bindings:
+
+```text
+player1.name
+player1.value
+player1.teamLogo
+player1.teamColor
+player1.teamPrimaryColor
+player1.teamSecondaryColor
+
+player2.name
+player2.value
+player2.teamLogo
+player2.teamColor
+player2.teamPrimaryColor
+player2.teamSecondaryColor
+```
+
+For editor preview, `player1.name/value` use `stat.raw4/raw5` and
+`player2.name/value` use `stat.raw8/raw9`.
+
+The running game resolves each leader's team independently from the 24-player
+cache, so row order does not mean home or away. The editor cannot access that
+live cache, so preview uses the selected Away team for `player1.team*` and the
+selected Home team for `player2.team*`.
+
+The Layers tab includes **Leader 1 Logo** and **Leader 2 Logo** buttons. These
+create movable image layers already bound to `player1.teamLogo` and
+`player2.teamLogo`. Exact position and size can then be changed in the Element
+tab like any other layer.
+
+
+### Starting 5 resolved player identity
+
+NBA Live 07/08 Starting 5 layouts can use the original abbreviated/package bindings plus resolved live-roster identity bindings:
+
+```text
+starting5.player1FirstName / LastName / FullName
+starting5.player1Number / player1JerseyNumber
+...same bindings for players 2–5
+```
+
+The editor has separate preview inputs for the five resolved full names and jersey numbers.
+
+### Compact non-scoreboard JSON
+
+Saving Intro, Stats, Starting Lineup, Outro, Violation, Playcall, or In-Game Lineups no longer serializes scoreboard-only behavior and legacy scoreboard geometry after `overlayZ`. Existing files remain load-compatible; saving them once removes the unused block.
+
+
+### Starting 5 resolved positions
+
+The Starting 5 runtime exposes fixed positional bindings matching the payload row order:
+
+```text
+starting5.player1Position = PG
+starting5.player2Position = SG
+starting5.player3Position = SF
+starting5.player4Position = PF
+starting5.player5Position = C
+```
+
+For NBA Live 07/08, resolved Starting 5 identity uses the payload team plus the engine's starter roster-slot order `4, 3, 2, 1, 0` as the primary key. Abbreviated player-name matching is retained only as a same-team fallback.
+
+## Shared season-comparison stat layout
+
+The following semantic stat subtypes share one optional layout file:
+
+```text
+season_assists
+season_blocks
+season_rebounds
+season_steals
+```
+
+Shared file:
+
+```text
+stats\season_comparison.json
+```
+
+Runtime lookup order remains:
+
+1. Exact subtype file, for example `season_rebounds.json`
+2. Shared `season_comparison.json`
+3. Generic `team_N.json`
+4. Generic `team.json`
+
+The observed 14-value season-comparison payload shape is:
+
+```text
+raw0  = stat title         (example: Rebounds)
+raw4  = left label         (Season)
+raw5  = left value         (43.8)
+raw8  = right label        (Tonight)
+raw9  = right value        (23)
+raw12 = packed team color
+raw13 = team code          (example: nj)
+```
+
+Because `raw13` is a team code, ordinary team stat bindings such as
+`stat.teamLogo`, `stat.teamName`, `stat.teamColor`, `stat.primaryColor`, and
+`stat.secondaryColor` remain available. Raw bindings can be used for the
+comparison labels and values.
